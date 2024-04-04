@@ -10,7 +10,7 @@ logging.basicConfig(format='%(asctime)s %(message)s', filename="validation.log",
 
 parser = argparse.ArgumentParser(description="Removes invalid email domains from a web hosted text or JSON file ")
 parser.add_argument('--threads', default=10, type=int, help='How many domains to process at once.')
-parser.add_argument('--source-file', default="sources.txt", help='File to pull the websites from', default="sources.txt")
+parser.add_argument('--source-file', default="sources.txt", help='File to pull the websites from')
 parser.add_argument('--dest-file', default="domains", help='The file to store the resuts. Exclude the file extension. (default: domains)')
 args = parser.parse_args()
 
