@@ -8,6 +8,11 @@ from collections import deque
 
 logging.basicConfig(format='%(asctime)s %(message)s', filename="validation.log", level=logging.INFO)
 
+parser = argparse.ArgumentParser(description="Removes invalid email domains from a web hosted text or JSON file ")
+parser.add_argument('--threads', default=10, type=int, help='How many domains to process at once.')
+parser.add_argument('--source-file', default="sources.txt", help='File to pull the websites from', default="sources.txt")
+parser.add_argument('--dest-file', default="domains", help='The file to store the resuts. Exclude the file extension. (default: domains)')
+args = parser.parse_args()
 
 class DomainChecker:
     def __init__(self, sources):
@@ -34,12 +39,12 @@ class DomainChecker:
             except Exception as e:
                 logging.info(f"Exception occurred while fetching data from {source}: {str(e)}")
 
-    def fetch_allowlist(self):
-        try:
-            with open('allowlist.txt', 'r') as f:
-                self.allowlist = set(f.read().splitlines())
-        except Exception as e:
-            logging.info(f"Exception occurred while reading the allowlist: {str(e)}")
+    # def fetch_allowlist(self):
+    #     try:
+    #         with open('allowlist.txt', 'r') as f:
+    #             self.allowlist = set(f.read().splitlines())
+    #     except Exception as e:
+    #         logging.info(f"Exception occurred while reading the allowlist: {str(e)}")
 
     def check_mx_record(self, domain, server):
         resolver = dns.resolver.Resolver()
@@ -52,7 +57,7 @@ class DomainChecker:
             return False
 
     def filter_domains(self):
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=args.threads) as executor:
             for i, domain in enumerate(self.domains):
                 server = self.dns_servers[i % 5]
                 if executor.submit(self.check_mx_record, domain, server).result():
@@ -62,13 +67,13 @@ class DomainChecker:
         self.valid_domains -= self.allowlist
 
     def write_domains(self):
-        with open('domains.txt', 'w') as f:
+        with open(f'{args.dest_file}.txt', 'w') as f:
             for domain in self.valid_domains:
                 f.write(f"{domain}\n")
         logging.info(f"Complete. In total {len(self.valid_domains)} valid domains written to domains.txt")
 
     def write_domains_json(self):
-        with open('domains.json', 'w') as f:
+        with open(f'{args.source_file}.json', 'w') as f:
             json.dump(list(self.valid_domains), f)
         logging.info(f"Complete. In total {len(self.valid_domains)} valid domains written to domains.json")
 
@@ -83,7 +88,7 @@ class DomainChecker:
 
     def run(self):
         self.fetch_domains()
-        self.fetch_allowlist()
+        # self.fetch_allowlist()
         self.filter_domains()
         self.exclude_allowlisted_domains()
         self.write_domains()
