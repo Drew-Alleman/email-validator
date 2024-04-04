@@ -62,6 +62,7 @@ class DomainChecker:
             for i, domain in enumerate(self.domains):
                 server = self.dns_servers[i % 5]
                 if executor.submit(self.check_mx_record, domain, server).result():
+                    logging.info(f"Found valid domain: {domain}")
                     self.valid_domains.add(domain)
 
     def exclude_allowlisted_domains(self):
